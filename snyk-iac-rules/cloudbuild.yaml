@@ -1,0 +1,56 @@
+# building snyk-iac-rules builder image
+steps:
+# build builder image as latest - since dockerfile specify snyk/snyk-iac-rules as latest
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '--tag=gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules'
+  - '.'
+  id: 'build-latest-version'
+
+# print version information - check version
+- name: gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules
+  args: ['--version']
+  id: 'check-version'
+  waitFor: ['build-latest-version']
+
+# store version as file in the workspace from the image that built in the first step
+# use sed and tr to get only version number
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: bash
+  args:
+  - '-c'
+  - >-
+    docker run --rm gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules --version |
+    sed 's/snyk-iac-rules version //' | tr -d '\n' > /workspace/version.txt
+  id: 'set-version-file'
+  waitFor: ['check-version']
+
+# tag specific tag of snyk-iac-rules version from latest image
+# latest tag is the image that built in the first step
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: bash
+  args:
+  - '-c'
+  - >-
+    docker tag
+    gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules
+    gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules:$(cat /workspace/version.txt)
+  id: 'tag-version'
+  waitFor: ['set-version-file']
+
+# push specific tag of snyk-iac-rules version from latest image
+# ⚠️ `cloud-build-local --push=false` won't work for this step.
+# ⚠️ please be careful if you run this build in your local
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: bash
+  args:
+  - '-c'
+  - >-
+    docker push gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules:$(cat /workspace/version.txt)
+  id: 'push-version'
+  waitFor: ['tag-version']
+
+# specify only latest tag to push since specific version is pushed from other step
+images:
+- 'gcr.io/$PROJECT_ID/cloud-builders/snyk-iac-rules'

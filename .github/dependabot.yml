@@ -1,0 +1,16 @@
+version: 2
+updates:
+- package-ecosystem: docker
+  directory: "/snyk-iac-rules"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 1
+  target-branch: master
+- package-ecosystem: docker
+  directory: "/snyk-cli"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 1
+  target-branch: master
+  ignore:
+  - dependency-name: homebrew/brew
