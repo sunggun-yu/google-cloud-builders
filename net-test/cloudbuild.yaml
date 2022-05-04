@@ -1,0 +1,12 @@
+# building snyk-iac-rules builder image
+steps:
+# build builder image as latest - since dockerfile specify snyk/snyk-cli as latest
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '--tag=gcr.io/$PROJECT_ID/cloud-builders/net-test'
+  - '.'
+  id: 'build-latest-version'
+
+images:
+- 'gcr.io/$PROJECT_ID/cloud-builders/net-test'
